@@ -33,7 +33,6 @@ int checkBankSpace(char * line, int size){
         return 1;
 }
 
-
 void script(char*  filename){
         FILE *inputFile = fopen(filename, "r");
         if (inputFile == NULL){
@@ -57,7 +56,8 @@ void script(char*  filename){
                 if (line[0] =='\n' || checkBankSpace(line, (int) read) == 1){
                         continue;
                 }
-                // printf("%zu\n", read);
+
+                // printf("%s\n", line);
                 splitLine = split_line(line, &sizeSplit);
                 execute(splitLine, history,sizeSplit, sizeHis, 1);
                 

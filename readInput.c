@@ -42,6 +42,7 @@ char **split_line(char * line, int * size) {
 }
 
 
+
 char *read_line() {
   int shouldRead = 0;
   int buffsize = 1024;
@@ -61,7 +62,7 @@ char *read_line() {
       buffer[position] = '\0';
       return buffer;
     } else {
-            if ((input != ' ' && input != '\t' && input != '\r') && shouldRead == 0){
+            if ((input != ' ' && input != '\t' && input != '\r')  && shouldRead == 0){
                 shouldRead = 1;
             }
             if (shouldRead == 1){
@@ -82,7 +83,6 @@ char *read_line() {
     }
   }
 }
-
 
 // copy current command for doubl bang
 char** copy_cmd(char** args, int size){

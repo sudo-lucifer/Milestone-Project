@@ -60,7 +60,7 @@ int main(int argc, char * argv[]) {
     printf("\033[H\033[J");
     printf("========================================\n");
     printf("%s@Copyright: Krittin Nisunarat%s\n",BLUE,RESET);
-    printf("%sWelcome to IC Shell Version 0.2.0%s\n", GREEN, RESET);
+    printf("%sWelcome to IC Shell Version 0.3.0%s\n", GREEN, RESET);
     printf("%sStarting IC shell prompt%s\n", PURPLE, RESET);
     printf("========================================\n\n");
     sleep(1);
