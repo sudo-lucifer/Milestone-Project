@@ -6,15 +6,11 @@
 #include <unistd.h>
 
 // define color in shell
-#define RED "\033[0;31m"
-#define BLUE "\033[0;34m"
 #define CYAN "\033[0;36m"
-#define GREEN "\033[0;32m"
 #define PURPLE "\033[0;35m"
-#define WHITE "\033[0;37m"
 #define RESET "\e[0m"
 
-int execute(char ** args, char ** history, int size, int size_his){
+int execute(char ** args, char ** history, int size, int size_his, int isScriptMode){
     int status = -1;
     char * cmd[4];
 
@@ -31,21 +27,31 @@ int execute(char ** args, char ** history, int size, int size_his){
 
     switch (status) {
         case 0:
-                printf("%sGood to see you!%s\n",CYAN,RESET);
+                if (isScriptMode == 0){
+                    printf("%sGood to see you!%s\n",CYAN,RESET);
+                }
                 // if (strcmp(args[1], ))
                 if (size != 1){
                     exit(atoi(args[1]));
                 }
                 exit(0);
         case 1:
-                if (size_his != 0){
-                    for (int i = 0; i<size_his; i++){
-                        printf("%s ", history[i]);
+                if (isScriptMode == 0){
+                    if (size_his != 0){
+                        for (int i = 0; i<size_his; i++){
+                                printf("%s ", history[i]);
+                        }
+                        printf("\n");
+                        execute(history, args, size_his,size, isScriptMode);
                     }
-                    printf("\n");
-                    execute(history, args, size_his,size);
+                    else { printf("%sicsh: No Command History%s\n", PURPLE,RESET); }
                 }
-                else { printf("%sicsh: No Command History%s\n", PURPLE,RESET); }
+                else{
+                    if (size_his != 0){
+                        execute(history, args, size_his,size, isScriptMode);
+                    }
+                    else { printf("%sicsh: No Command History%s\n", PURPLE,RESET); }
+                }
                 break;
         case 2:
                 if (size != 1){
