@@ -1,7 +1,9 @@
+#include <signal.h>
 #include <stdio.h> 
 #include <string.h> 
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 
 // import all header file in project
 #include "executeCommand.h"
@@ -34,8 +36,46 @@
  *      2. split the input with space
  *      3. execute the command from user
  * */
+void signal_handler(int signum){
+        printf("\n%sCtrl + c is pressed, but nothing is running in forground%s\n", PURPLE,RESET);
+        // exit(1);
+}
+
+void sigstop_handler(int signum){
+        printf("\n%sCtrl + z is pressed, but nothing is running in forground%s\n", PURPLE,RESET);
+}
 
 int main(int argc, char * argv[]) {
+    // Ctrl + c
+    struct sigaction new_action, old_action;
+
+    new_action.sa_handler = signal_handler;
+    sigemptyset(&new_action.sa_mask);
+    new_action.sa_flags = 0;
+
+    sigaction(SIGINT, NULL, &old_action);
+    if (old_action.sa_handler != SIG_IGN){
+            sigaction(SIGINT, &new_action,NULL);
+    }
+
+    // Ctrl + z
+    struct sigaction new_action1, old_action1;
+
+    new_action1.sa_handler = sigstop_handler;
+    sigemptyset(&new_action1.sa_mask);
+    new_action1.sa_flags = 0;
+
+    sigaction(SIGTSTP, NULL, &old_action1);
+    if (old_action1.sa_handler != SIG_IGN){
+            sigaction(SIGTSTP, &new_action1,NULL);
+    }
+
+    // ignore exit shell signal after sigint and sigstop are activated
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+
+    sigaction(SIGTTOU, &sa,NULL);
+
     if (argc > 1){
         for (int i = 1; i < argc; i++){
             printf("%sRunning command lines from: %s%s%s%s\n", BLUE,RESET,GREEN,argv[i], RESET);
@@ -60,7 +100,7 @@ int main(int argc, char * argv[]) {
     printf("\033[H\033[J");
     printf("========================================\n");
     printf("%s@Copyright: Krittin Nisunarat%s\n",BLUE,RESET);
-    printf("%sWelcome to IC Shell Version 0.3.0%s\n", GREEN, RESET);
+    printf("%sWelcome to IC Shell Version 0.4.0%s\n", GREEN, RESET);
     printf("%sStarting IC shell prompt%s\n", PURPLE, RESET);
     printf("========================================\n\n");
     sleep(1);

@@ -1,4 +1,5 @@
 #include <stdio.h> 
+#include <signal.h>
 #include <string.h> 
 #include <stdlib.h>
 #include <sys/types.h>
@@ -8,6 +9,7 @@
 
 // define color in shell
 #define CYAN "\033[0;36m"
+#define GREEN "\033[0;32m"
 #define RED "\033[0;31m"
 #define PURPLE "\033[0;35m"
 #define RESET "\e[0m"
@@ -17,24 +19,53 @@
  *      2. if no internal command match, use external command by forking system call
  *      3. if no internal and external command, return 0. OR, there is exit command
  * */
+int exitValue = 0;
 
 // function for execute commands from system
 void executeBySyscall(char ** args){
-        int status;
+        struct sigaction sa;
+
         pid_t cpid = fork();
         
         if (cpid == 0){
+                // unblock signal sigint and sigstop
+                sa.sa_handler = SIG_DFL;
+                sigaction(SIGINT, &sa,NULL);
+                sigaction(SIGTSTP, &sa, NULL);
+
+                // set seperate group for child process in forground
+                cpid = getpid();
+                setpgid(cpid,cpid);
+                tcsetpgrp(0, cpid);
+
                 if(execvp(args[0], args) < 0){
                         printf("%sicsh: Command Not Found: %s%s\n", PURPLE,args[0],RESET);
                         exit(EXIT_FAILURE);
                 }
-                exit(EXIT_SUCCESS);
+                else {
+                        exit(EXIT_SUCCESS);
+                }
         }
         else if (cpid < 0){
                 printf("%sicsh: Error Forking%s\n", RED, RESET);
         }
         else{
-                waitpid(cpid, &status,WUNTRACED);
+                setpgid(cpid,cpid);
+                tcsetpgrp(0, cpid);
+                int stat;
+                waitpid(cpid, &stat,WUNTRACED);
+                tcsetpgrp(0, getpid());
+
+                if (WIFEXITED(stat)){
+                        exitValue = WEXITSTATUS(stat);
+                }
+                else if (WIFSIGNALED(stat)){
+                        printf("\n");
+                        exitValue = WTERMSIG(stat);
+                }
+                else{
+                        printf("\n");
+                }
         }
 }
 
@@ -52,7 +83,7 @@ void cd(char ** args, int size){
                 struct stat s;
                 int check = stat(current, &s);
                 if (check == -1){
-                        printf("%sicsh: No Such File or Directory: %s%s%s%s\n", PURPLE, RESET, CYAN, args[1], RESET);
+                        printf("%sicsh: No Such File or Directory: %s%s%s%s\n", PURPLE, RESET, GREEN, args[1], RESET);
                 }
                 else{
                         if (S_ISDIR(s.st_mode)){
@@ -66,8 +97,6 @@ void cd(char ** args, int size){
         else{
                 chdir("/home/u6280782/");
         }
-
-
 }
 
 // execute internal commands
@@ -77,9 +106,9 @@ int execute(char ** args, char ** history, int size, int size_his, int isScriptM
 
     cmd[0] = "exit";
     cmd[1] = "!!";
-    cmd[2] = "echo";
-    cmd[3] = "clear";
-    cmd[4] = "cd";
+    cmd[2] = "clear";
+    cmd[3] = "cd";
+    cmd[4] = "echo";
 
     for (int i = 0; i < 5;i++){
             if (strcmp(args[0], cmd[i]) == 0){
@@ -121,21 +150,24 @@ int execute(char ** args, char ** history, int size, int size_his, int isScriptM
                 }
                 break;
         case 2:
+                printf("\033[H\033[J");
+                break;
+        case 3:
+                cd(args,size);
+                break;
+        case 4:
                 if (size != 1){
                         for (int i = 1; i < size; i++){
+                                if (strcmp(args[i], "$?") == 0){
+                                        printf("%d",exitValue);
+                                        exitValue = 0;
+                                        break;
+                                }
                             printf("%s ",args[i]);
                         }
                 }
                 printf("\n");
                 break;
-        case 3:
-                printf("\033[H\033[J");
-                break;
-        case 4:
-                cd(args,size);
-                break;
-        // default:
-                // printf("%sicsh: Command Not Found: %s%s\n", PURPLE,args[0],RESET);
     }
     return 1;
 }
