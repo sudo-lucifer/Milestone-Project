@@ -1,3 +1,4 @@
+// #include <csignal>
 #include <stdio.h> 
 #include <signal.h>
 #include <string.h> 
@@ -21,8 +22,26 @@
  * */
 int exitValue = 0;
 
+void childHandler(int sig, siginfo_t * sip, void * notused){
+        int status;
+
+        status = 0;
+        if (sip->si_pid == waitpid(sip->si_pid, &status, WNOHANG)){
+                if (WIFEXITED(status) || WTERMSIG(status)){
+                        printf("The child is gone PID: %d\n", sip->si_pid);
+                }
+        }
+}
+
 // function for execute commands from system
 void executeBySyscall(char ** args){
+        // instal signal for child process to completely exit (not zombie)
+        struct sigaction action;
+        action.sa_sigaction = childHandler;
+        sigfillset(&action.sa_mask);
+        action.sa_flags = SA_SIGINFO;
+        sigaction(SIGCHLD, &action, NULL);
+
         struct sigaction sa;
 
         pid_t cpid = fork();
