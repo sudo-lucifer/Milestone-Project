@@ -1,4 +1,4 @@
-// #include <csignal>
+#include <fcntl.h>
 #include <stdio.h> 
 #include <signal.h>
 #include <string.h> 
@@ -22,6 +22,19 @@
  * */
 int exitValue = 0;
 
+int checkIORedirect(char ** args, int size, int inOrOut){
+        char * sign[2];
+        sign[0] = "<";
+        sign[1] = ">";
+
+        for (int i = 0; i < size; i++){
+                if (strcmp(args[i], sign[inOrOut]) == 0){
+                        return i;
+                }
+        }
+        return -1;
+}
+
 void childHandler(int sig, siginfo_t * sip, void * notused){
         int status;
 
@@ -33,8 +46,18 @@ void childHandler(int sig, siginfo_t * sip, void * notused){
         }
 }
 
+// copy command before > and < sign
+char** getNewCmd(char** args, int index_to){
+        char ** cmd = malloc((sizeof(char *) * index_to) + 1);
+        for (int i = 0; i < index_to; i++){
+                cmd[i] = strdup(args[i]);
+        }
+        cmd[index_to] = NULL;
+        return cmd;
+}
+
 // function for execute commands from system
-void executeBySyscall(char ** args){
+void executeBySyscall(char ** args, int size){
         // instal signal for child process to completely exit (not zombie)
         struct sigaction action;
         action.sa_sigaction = childHandler;
@@ -57,12 +80,91 @@ void executeBySyscall(char ** args){
                 setpgid(cpid,cpid);
                 tcsetpgrp(0, cpid);
 
-                if(execvp(args[0], args) < 0){
-                        printf("%sicsh: Command Not Found: %s%s\n", PURPLE,args[0],RESET);
+                // int index_inRedirect = checkIORedirect(args, size, 0);
+                int index_outRedirect = checkIORedirect(args, size, 1);
+                int index_inRedirect = checkIORedirect(args, size, 0);
+                int contain_in = 0;
+                int contain_out = 0;
+                char ** new_args = NULL;
+
+                // case for the input that have < or > but empty in front
+                // ex. > filename
+                if (!index_inRedirect || !index_outRedirect){
+                    printf("%sNo command to excecute%s\n", PURPLE, RESET);
+                    exit(EXIT_FAILURE);
+                }
+
+                // for invalid command that does not have file name ie. cat filename >, or > only
+                if (args[index_outRedirect + 1] == NULL || args[index_inRedirect + 1] == NULL){
+                        printf("%sCan not redirect file with empty name%s\n",PURPLE,RESET);
                         exit(EXIT_FAILURE);
                 }
+
+                // input redirection
+                if (index_inRedirect != -1){
+                        int in = open(args[index_inRedirect + 1], O_RDONLY);
+                        contain_in = 1;
+
+                        if (in <= 0){
+                                printf("%sCan not open file name:%s %s%s%s\n", PURPLE, RESET, GREEN,args[index_inRedirect + 1], RESET);
+                                exit(EXIT_FAILURE);
+                                
+                        }
+
+                        dup2(in, 0);
+                        close(in);
+                }
+
+                // output redirection
+                if (index_outRedirect != -1){
+                        int out = open(args[index_outRedirect + 1], O_TRUNC | O_CREAT | O_WRONLY, 0666);
+                        contain_out = 1;
+
+                        if (out <= 0){
+                                printf("%sCan not open or create file name:%s %s%s%s\n", PURPLE, RESET, GREEN,args[index_outRedirect + 1], RESET);
+                                exit(EXIT_FAILURE);
+                        }
+
+                        dup2(out,1);
+                        close(out);
+                }
+
+                // split string before redirection sign exit
+                if (contain_in){
+                        new_args = getNewCmd(args, index_inRedirect);
+                }
+                else if (contain_out){
+                        new_args = getNewCmd(args, index_outRedirect);
+                }
+                else if (contain_in && contain_out){
+                        if (contain_in < contain_out){
+                            new_args = getNewCmd(args, index_inRedirect);
+                        }
+                        else{
+                            new_args = getNewCmd(args, index_outRedirect);
+                        }
+                }
+
+                // execute by case
+                if (contain_in || contain_out){
+                        if(execvp(new_args[0], new_args) < 0){
+                                printf("%sicsh: Command Not Found: %s%s\n", PURPLE,new_args[0],RESET);
+                                free(new_args);
+                                exit(EXIT_FAILURE);
+                        }
+                        else {
+                                free(new_args);
+                                exit(EXIT_SUCCESS);
+                        }
+                }
                 else {
-                        exit(EXIT_SUCCESS);
+                        if(execvp(args[0], args) < 0){
+                                printf("%sicsh: Command Not Found: %s%s\n", PURPLE,args[0],RESET);
+                                exit(EXIT_FAILURE);
+                        }
+                        else {
+                                exit(EXIT_SUCCESS);
+                        }
                 }
         }
         else if (cpid < 0){
@@ -137,8 +239,39 @@ int execute(char ** args, char ** history, int size, int size_his, int isScriptM
 
 
     if(status == -1){
-            executeBySyscall(args);
+            executeBySyscall(args, size);
             return 1;
+    }
+
+    // save default standard output
+    int default_stdout = dup(1);
+    int index_outRedirect =checkIORedirect(args, size,1);
+    int contain_out = 0;
+
+    // case for the input that have < or > but empty in front
+    // ex. > filename
+    if (!index_outRedirect){
+                printf("%sNo command to excecute%s\n", PURPLE, RESET);
+                return 1;
+        }
+    // for invalid command that does not have file name ie. cat filename >, or > only
+    if (args[index_outRedirect + 1] == NULL){
+                printf("%sCan not redirect file with empty name%s\n",PURPLE,RESET);
+                return 1;
+    }
+
+    // redirect for internal command
+    if (index_outRedirect != -1){
+                int out = open(args[index_outRedirect + 1], O_TRUNC | O_CREAT | O_WRONLY, 0666);
+                contain_out = 1;
+
+                if (out <= 0){
+                        printf("%sCan not open or create file name:%s %s%s%s\n", PURPLE, RESET, GREEN,args[index_outRedirect + 1], RESET);
+                        return 1;
+                }
+
+                dup2(out,1);
+                close(out);
     }
 
     switch (status) {
@@ -176,7 +309,12 @@ int execute(char ** args, char ** history, int size, int size_his, int isScriptM
                 break;
         case 4:
                 if (size != 1){
-                        for (int i = 1; i < size; i++){
+                        int limit = size;
+                        if (contain_out){
+                                limit = index_outRedirect;
+                        }
+
+                        for (int i = 1; i < limit; i++){
                                 if (strcmp(args[i], "$?") == 0){
                                         printf("%d",exitValue);
                                         exitValue = 0;
@@ -188,6 +326,8 @@ int execute(char ** args, char ** history, int size, int size_his, int isScriptM
                 printf("\n");
                 break;
     }
+    // set back to default
+    dup2(default_stdout, 1);
     return 1;
 }
 
