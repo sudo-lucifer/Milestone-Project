@@ -8,10 +8,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-
 #include "executeCommand.h"
 #include "jobsHandlers.h"
-
 
 // define color in shell
 #define CYAN "\033[0;36m"

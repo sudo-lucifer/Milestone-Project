@@ -2,11 +2,9 @@
 #include<string.h>
 #include<stdlib.h>
 
-
 #include "readInput.h"
 #include "executeCommand.h"
 #include "jobsHandlers.h"
-
 
 #define BUFFERSIZE 1024
 
@@ -42,6 +40,7 @@ void script(char*  filename){
                 printf("%sFail to Read File: %s%s\n",RED, filename, RESET);
                 return;
         }
+        int stat = 0;
         char * line = NULL;
         ssize_t read;
         size_t len = 0;
@@ -63,7 +62,10 @@ void script(char*  filename){
 
                 // printf("%s\n", line);
                 splitLine = split_line(line, &sizeSplit);
-                execute(splitLine, history,sizeSplit, sizeHis, 1);
+                stat = execute(splitLine, history,sizeSplit, sizeHis, 1);
+                if (stat != 1){
+                        break;
+                }
                 
                 if (strcmp(line, "!!") == 0){
                     bangCount++;
@@ -87,5 +89,8 @@ void script(char*  filename){
         }
         fclose(inputFile);
         if (line) free(line);
+        if (stat != 1)
+            exit(stat);
+        exit(0);
 }
 

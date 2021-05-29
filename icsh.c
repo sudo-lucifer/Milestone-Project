@@ -109,7 +109,7 @@ int main(int argc, char * argv[]) {
     printf("\033[H\033[J");
     printf("========================================\n");
     printf("%s@Copyright: Krittin Nisunarat%s\n",BLUE,RESET);
-    printf("%sWelcome to IC Shell Version 0.7.0%s\n", GREEN, RESET);
+    printf("%sWelcome to IC Shell Version 0.6.0%s\n", GREEN, RESET);
     printf("%sStarting IC shell prompt%s\n", PURPLE, RESET);
     printf("========================================\n\n");
     sleep(1);
@@ -151,5 +151,5 @@ int main(int argc, char * argv[]) {
     }
     free(history);
     free_jobs();
-    return 0;
+    return status;
 }
