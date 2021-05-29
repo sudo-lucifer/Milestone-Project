@@ -58,7 +58,6 @@ Name: Krittin Nisunarat
         include jobs control command
 - Main function file:
     - icsh.c
-<<<<<<< HEAD
 - Helper file:
     - executeCommand.c and header: for execution part
     - readInput.c and header: for parse command
