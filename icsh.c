@@ -3,12 +3,16 @@
 #include <string.h> 
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 // import all header file in project
 #include "executeCommand.h"
 #include "readInput.h"
 #include "scriptMode.h"
+#include "jobsHandlers.h"
 
 
 // define color in shell
@@ -36,14 +40,18 @@
  *      2. split the input with space
  *      3. execute the command from user
  * */
+
 void signal_handler(int signum){
-        printf("\n%sCtrl + c is pressed, but nothing is running in forground%s\n", PURPLE,RESET);
-        // exit(1);
+        printf("\n\n");
+        return;
 }
 
 void sigstop_handler(int signum){
-        printf("\n%sCtrl + z is pressed, but nothing is running in forground%s\n", PURPLE,RESET);
+        // printf("\n%sCtrl + z is pressed, but nothing is running in forground%s\n", PURPLE,RESET);
+        printf("\n\n");
+        return;
 }
+
 
 int main(int argc, char * argv[]) {
     // Ctrl + c
@@ -73,7 +81,6 @@ int main(int argc, char * argv[]) {
     // ignore exit shell signal after sigint and sigstop are activated
     struct sigaction sa;
     sa.sa_handler = SIG_IGN;
-
     sigaction(SIGTTOU, &sa,NULL);
 
     if (argc > 1){
@@ -96,11 +103,13 @@ int main(int argc, char * argv[]) {
     char **args;
     int size = 0;  
 
+    init_jobs();
+
     // clear();
     printf("\033[H\033[J");
     printf("========================================\n");
     printf("%s@Copyright: Krittin Nisunarat%s\n",BLUE,RESET);
-    printf("%sWelcome to IC Shell Version 0.5.0%s\n", GREEN, RESET);
+    printf("%sWelcome to IC Shell Version 0.6.0%s\n", GREEN, RESET);
     printf("%sStarting IC shell prompt%s\n", PURPLE, RESET);
     printf("========================================\n\n");
     sleep(1);
@@ -110,8 +119,9 @@ int main(int argc, char * argv[]) {
      * 3. execute command
      * */
     while (status){
-        char pwd[1024];
-        getcwd(pwd, sizeof(pwd));
+        char buffer[4096];
+        char * pwd = getcwd(buffer, sizeof(buffer));
+        // printf("%s\n",test);
         printf("%sicsh:%s%s%s%s >>> ", WHITE,RESET,BLUE,pwd,RESET);
         line = read_line();
         if (strcmp(line, "") == 0){
@@ -119,6 +129,10 @@ int main(int argc, char * argv[]) {
         }
         args = split_line(line, &size);
         status = execute(args, history, size, size_his, 0);
+
+        if (status != 1){
+                break;
+        }
 
         // printf("size: %d\n", size);
         if (strcmp(args[0], "!!") == 0){
@@ -136,5 +150,6 @@ int main(int argc, char * argv[]) {
         free(args);
     }
     free(history);
+    free_jobs();
     return 0;
 }

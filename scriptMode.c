@@ -4,6 +4,7 @@
 
 #include "readInput.h"
 #include "executeCommand.h"
+#include "jobsHandlers.h"
 
 #define BUFFERSIZE 1024
 
@@ -51,6 +52,7 @@ void script(char*  filename){
 
         int bangCount = 0;
 
+        init_jobs();
 
         while((read = getline(&line, &len, inputFile)) != -1){
                 if (line[0] =='\n' || checkBankSpace(line, (int) read) == 1){
@@ -76,6 +78,7 @@ void script(char*  filename){
                 free(splitLine);
 
         }
+        free_jobs();
 
         if (sizeHis != 0){
                 free(history);
