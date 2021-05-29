@@ -71,8 +71,6 @@ Name: Krittin Nisunarat
         implement cd command and customize shell with color
 - Main function file:
     - icsh.c
-=======
->>>>>>> 02d6b15a5c9e03bb53e02ec170f6e93e7389df4a
 - Helper file:
     - executeCommand.c and header: for execution part
     - readInput.c and header: for parse command
