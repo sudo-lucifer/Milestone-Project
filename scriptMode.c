@@ -2,9 +2,11 @@
 #include<string.h>
 #include<stdlib.h>
 
+
 #include "readInput.h"
 #include "executeCommand.h"
 #include "jobsHandlers.h"
+
 
 #define BUFFERSIZE 1024
 

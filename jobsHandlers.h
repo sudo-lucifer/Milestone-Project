@@ -6,6 +6,7 @@ struct process{
         int isRunning;
 };
 
+
 void init_jobs();
 void free_jobs();
 void remove_jobs(int pid);

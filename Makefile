@@ -1,6 +1,7 @@
 CC = gcc
 CFLAGS = -O -Wall -m32 -g
 
+
 all: icsh
 
 icsh: icsh.c executeCommand.c executeCommand.h readInput.c readInput.h scriptMode.c scriptMode.h jobsHandlers.c jobsHandlers.h

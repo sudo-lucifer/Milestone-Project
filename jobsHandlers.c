@@ -8,7 +8,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+
 #include "jobsHandlers.h"
+
 
 #define JOBSIZE 100
 #define CYAN "\033[0;36m"
