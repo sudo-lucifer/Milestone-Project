@@ -58,6 +58,21 @@ Name: Krittin Nisunarat
         include jobs control command
 - Main function file:
     - icsh.c
+<<<<<<< HEAD
+- Helper file:
+    - executeCommand.c and header: for execution part
+    - readInput.c and header: for parse command
+    - scriptMode.c and header: for script mode shell
+    - jobHandlers.c and header: for all job control functions
+- Compile file:
+    - Makefile
+
+## Milestone 7:
+        implement cd command and customize shell with color
+- Main function file:
+    - icsh.c
+=======
+>>>>>>> 02d6b15a5c9e03bb53e02ec170f6e93e7389df4a
 - Helper file:
     - executeCommand.c and header: for execution part
     - readInput.c and header: for parse command
